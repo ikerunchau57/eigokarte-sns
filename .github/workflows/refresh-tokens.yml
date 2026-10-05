@@ -1,0 +1,34 @@
+name: トークン自動延長（Threads / Instagram）
+
+# Meta の長期トークンは60日で切れるため、週1回延長してリポジトリの Secret を上書きする。
+on:
+  schedule:
+    - cron: "0 18 * * 0"   # 毎週月曜 03:00 JST
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: 延長して Secret を更新
+        env:
+          GH_TOKEN: ${{ secrets.GH_SECRETS_PAT }}   # Secrets を書き換えられる fine-grained PAT
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: |
+          python - <<'EOF'
+          import os, subprocess
+          from src.publishers import threads, instagram
+          for name, fn in [("THREADS_ACCESS_TOKEN", threads.refresh_token), ("IG_ACCESS_TOKEN", instagram.refresh_token)]:
+              old = os.environ.get(name)
+              if not old:
+                  continue
+              new = fn(old)
+              subprocess.run(["gh", "secret", "set", name, "--body", new], check=True)
+              print(f"{name} を延長しました")
+          EOF

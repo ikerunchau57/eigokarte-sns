@@ -1,0 +1,48 @@
+# 英語カルテのブランド設定。ここを書き換えると全SNSの文章・画像に反映されます。
+# 出典: https://eigokarte.com/ （2026-10-05 時点）
+name: 英語カルテ
+tagline: AIが書き、人が疑い、あなたが解く。
+description: >-
+  英語カルテは、医学部受験生のための英語教材サイトです。
+  共通テストから私立医学部27校まで、各大学の出題傾向に合わせたオリジナル英文問題を提供しています。
+  AIで英文を作成し、正解・和訳・文法解説・事実関係を人の手で1問ずつ検証しています
+  （約400題を点検し、延べ300箇所以上を修正。検証記録も公開）。
+  現役の医学部予備校講師が制作し、自動採点・タイマー機能付き。
+  無料教材は全機能公開、有料教材は1,900円からの買い切りです。
+url: https://eigokarte.com/
+audience: 医学部志望の高校生・浪人生、共通テスト英語で高得点を狙う受験生、医学部予備校・塾の英語指導者
+tone: 誠実で具体的。煽らない。根拠のある学習法だけを伝える。です・ます調。
+# 文章中や投稿リンクで紹介してよいページ（日替わりで1つ選ばれます）
+promo_links:
+  - title: 共通テスト英語 実践問題 第1回（リーディング・無料）
+    url: https://eigokarte.com/materials/kyotsu-r1-reading.html
+  - title: 共通テスト リスニング予想問題
+    url: https://eigokarte.com/listening/
+  - title: 速読英語 REAL（無料）
+    url: https://eigokarte.com/materials/sokudoku-real.html
+  - title: 構文カルテ Vol.3 長文読解ラボ（無料）
+    url: https://eigokarte.com/materials/kobun-vol3.html
+  - title: 私立医学部27校 英語横断比較
+    url: https://eigokarte.com/english-hikaku.html
+  - title: 目標得点・時間配分データ
+    url: https://eigokarte.com/strategy-data.html
+  - title: 2027年度 医学部入試 日程戦略
+    url: https://eigokarte.com/schedule-2027.html
+  - title: 大学別対策
+    url: https://eigokarte.com/universities.html
+  - title: 品質・監査記録
+    url: https://eigokarte.com/quality.html
+accounts:
+  x: https://x.com/eigokarte0507
+  note: https://note.com/eigokarte
+hashtags:
+  x: ["#共通テスト", "#医学部受験", "#英語カルテ"]
+  threads: ["共通テスト", "医学部受験"]
+  instagram: ["#共通テスト", "#共通テスト英語", "#医学部", "#医学部受験", "#私立医学部", "#大学受験", "#英語勉強", "#受験生", "#英語カルテ"]
+# Xはリンク付き投稿が1件$0.20、リンクなしは$0.015。リンクは1日1回だけにする
+x_link_slots: ["evening"]
+colors:
+  primary: "#16324F"     # サイトのメインカラー（濃紺）
+  accent: "#E8505B"      # カルテの朱
+  background: "#F7F9FB"
+  text: "#1B2631"

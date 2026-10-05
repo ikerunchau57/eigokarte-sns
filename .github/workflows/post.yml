@@ -1,0 +1,107 @@
+name: SNS自動投稿
+
+on:
+  schedule:
+    - cron: "0 22 * * *"    # 07:00 JST 朝
+    - cron: "30 3 * * *"    # 12:30 JST 昼
+    - cron: "0 11 * * *"    # 20:00 JST 夜（+ note）
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "morning / noon / evening（空なら時刻で自動判定）"
+        required: false
+      dry_run:
+        description: "1 なら投稿せず内容だけ表示"
+        required: false
+        default: "0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sns-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      TZ: Asia/Tokyo
+      DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+      FORCE_SLOT: ${{ github.event.inputs.slot }}
+      MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+      NOTE_MODE: ${{ vars.NOTE_MODE || 'draft' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      X_API_KEY: ${{ secrets.X_API_KEY }}
+      X_API_SECRET: ${{ secrets.X_API_SECRET }}
+      X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+      X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+      THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+      THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      NOTE_EMAIL: ${{ secrets.NOTE_EMAIL }}
+      NOTE_PASSWORD: ${{ secrets.NOTE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 依存関係
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: 今日のコンテンツを生成（未作成なら）
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::ANTHROPIC_API_KEY が未登録のため今回はスキップします"
+            echo "SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          python -m src.run prepare
+
+      - name: 画像・動画を GitHub Pages に公開
+        if: env.SKIP != '1'
+        run: |
+          DATE=$(date +%F)
+          git config user.name "sns-bot"
+          git config user.email "sns-bot@users.noreply.github.com"
+          rm -rf /tmp/site && mkdir -p /tmp/site
+          if git ls-remote --exit-code origin gh-pages >/dev/null; then
+            git worktree add /tmp/site gh-pages
+          else
+            git worktree add --orphan -b gh-pages /tmp/site
+          fi
+          mkdir -p /tmp/site/$DATE
+          cp public/$DATE/*.jpg public/$DATE/*.mp4 /tmp/site/$DATE/
+          touch /tmp/site/.nojekyll
+          # 古いメディアは14日で削除（容量対策）
+          find /tmp/site -maxdepth 1 -type d -name '20*' -mtime +14 -exec rm -rf {} + || true
+          cd /tmp/site && git add -A && (git commit -qm "media $DATE" && git push -q origin gh-pages) || echo "変更なし"
+
+      - name: 投稿
+        if: env.SKIP != '1'
+        run: python -m src.run auto
+
+      - name: 投稿記録を保存
+        if: always() && env.SKIP != '1'
+        run: |
+          git add state public/*/content.json public/*/note.md public/*/posted.json 2>/dev/null || true
+          git commit -qm "log $(date +%F_%H%M)" && git pull -q --rebase && git push -q || echo "変更なし"
+
+      - name: 失敗時のスクリーンショット
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: public/*/_screens
+          if-no-files-found: ignore
